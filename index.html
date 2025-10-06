@@ -54,29 +54,38 @@
         <section id="chatSection" class="bg-white p-6 rounded-lg shadow mb-6 hidden">
             <h2 class="text-xl font-bold mb-4">💬 Chat dos Participantes</h2>
             
-            <div id="chatLoginArea" class="space-y-4">
-                <p class="text-gray-600">Para acessar o chat, identifique-se com sua matrícula:</p>
-                <div class="flex gap-2">
-                    <input type="text" id="chatMatricula" placeholder="Digite sua matrícula" class="flex-1 p-2 border rounded-lg">
-                    <button id="chatEntrarBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg">Entrar</button>
+            <div id="chatDesabilitado" class="hidden">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <p class="text-red-800 font-semibold">❌ Chat desabilitado</p>
+                    <p class="text-red-600 text-sm mt-1">O chat não está disponível no momento.</p>
                 </div>
             </div>
 
-            <div id="chatArea" class="hidden space-y-4">
-                <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-3">
-                    <p class="text-sm"><strong>Logado como:</strong> <span id="chatUsuarioNome" class="text-cyan-700"></span></p>
-                    <button id="chatSairBtn" class="text-xs text-cyan-600 hover:text-cyan-800 underline mt-1">Sair do chat</button>
+            <div id="chatHabilitadoArea">
+                <div id="chatLoginArea" class="space-y-4">
+                    <p class="text-gray-600">Para acessar o chat, identifique-se com sua matrícula:</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="chatMatricula" placeholder="Digite sua matrícula" class="flex-1 p-2 border rounded-lg">
+                        <button id="chatEntrarBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg">Entrar</button>
+                    </div>
                 </div>
 
-                <div class="border rounded-lg p-4 h-96 overflow-y-auto bg-gray-50" id="chatMensagens">
-                    <p class="text-gray-400 text-center text-sm">Carregando mensagens...</p>
-                </div>
+                <div id="chatArea" class="hidden space-y-4">
+                    <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-3">
+                        <p class="text-sm"><strong>Logado como:</strong> <span id="chatUsuarioNome" class="text-cyan-700"></span></p>
+                        <button id="chatSairBtn" class="text-xs text-cyan-600 hover:text-cyan-800 underline mt-1">Sair do chat</button>
+                    </div>
 
-                <form id="chatForm" class="flex gap-2">
-                    <input type="text" id="chatTexto" placeholder="Digite sua mensagem..." class="flex-1 p-2 border rounded-lg" maxlength="500" required>
-                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg">Enviar</button>
-                </form>
-                <p class="text-xs text-gray-500">Máximo 500 caracteres por mensagem</p>
+                    <div class="border rounded-lg p-4 h-96 overflow-y-auto bg-gray-50" id="chatMensagens">
+                        <p class="text-gray-400 text-center text-sm">Carregando mensagens...</p>
+                    </div>
+
+                    <form id="chatForm" class="flex gap-2">
+                        <input type="text" id="chatTexto" placeholder="Digite sua mensagem..." class="flex-1 p-2 border rounded-lg" maxlength="500" required>
+                        <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg">Enviar</button>
+                    </form>
+                    <p class="text-xs text-gray-500">Máximo 500 caracteres por mensagem</p>
+                </div>
             </div>
         </section>
 
@@ -99,6 +108,16 @@
                             <span id="inscricaoStatus">🟢 Inscrições Habilitadas</span>
                         </button>
                         <p class="text-sm text-gray-600">Clique para habilitar/desabilitar as inscrições do campeonato</p>
+                    </div>
+                </div>
+
+                <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-200">
+                    <h3 class="text-lg font-semibold mb-2">Controle do Chat</h3>
+                    <div class="flex items-center gap-3">
+                        <button id="toggleChatBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                            <span id="chatStatus">🟢 Chat Habilitado</span>
+                        </button>
+                        <p class="text-sm text-gray-600">Clique para habilitar/desabilitar o chat dos participantes</p>
                     </div>
                 </div>
 
@@ -219,6 +238,7 @@
                 verificarStatusInscricao();
             }
             if (name === 'chat') {
+                verificarStatusChat();
                 verificarLoginChat();
             }
         }
@@ -260,6 +280,7 @@
         // --- CONFIG GERAL ---
         let limite = 2;
         let inscricoesHabilitadas = true;
+        let chatHabilitado = true;
 
         async function carregarConfigGeral() {
             try {
@@ -268,12 +289,15 @@
                     const config = snap.data();
                     limite = config?.limite || 2;
                     inscricoesHabilitadas = config?.inscricoesHabilitadas !== false;
+                    chatHabilitado = config?.chatHabilitado !== false;
                 } else {
                     limite = 2;
                     inscricoesHabilitadas = true;
+                    chatHabilitado = true;
                 }
                 document.getElementById('limiteInput').value = limite;
                 atualizarStatusInscricao();
+                atualizarStatusChat();
             } catch (e) {
                 console.error("Erro ao carregar config:", e);
             }
@@ -291,6 +315,59 @@
                 status.textContent = '🔴 Inscrições Desabilitadas';
             }
         }
+
+        function atualizarStatusChat() {
+            const btn = document.getElementById('toggleChatBtn');
+            const status = document.getElementById('chatStatus');
+            
+            if (chatHabilitado) {
+                btn.className = 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg';
+                status.textContent = '🟢 Chat Habilitado';
+            } else {
+                btn.className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg';
+                status.textContent = '🔴 Chat Desabilitado';
+            }
+        }
+
+        function verificarStatusChat() {
+            const area = document.getElementById('chatHabilitadoArea');
+            const mensagem = document.getElementById('chatDesabilitado');
+            
+            if (chatHabilitado) {
+                area.classList.remove('hidden');
+                mensagem.classList.add('hidden');
+            } else {
+                area.classList.add('hidden');
+                mensagem.classList.remove('hidden');
+                // Deslogar usuário se o chat for desabilitado
+                if (chatUsuario) {
+                    chatUsuario = null;
+                    if (chatUnsubscribe) {
+                        chatUnsubscribe();
+                        chatUnsubscribe = null;
+                    }
+                }
+            }
+        }
+
+        document.getElementById('toggleChatBtn').addEventListener('click', async () => {
+            try {
+                chatHabilitado = !chatHabilitado;
+                await setDoc(configDocRef, { chatHabilitado }, { merge: true });
+                atualizarStatusChat();
+                
+                const statusText = chatHabilitado ? 'habilitado' : 'desabilitado';
+                alert(`Chat ${statusText} com sucesso!`);
+                
+                // Atualizar a tela do chat se estiver visível
+                if (!document.getElementById('chatSection').classList.contains('hidden')) {
+                    verificarStatusChat();
+                }
+            } catch (e) {
+                console.error("Erro ao alterar status do chat:", e);
+                alert('Erro ao alterar status do chat.');
+            }
+        });
 
         function verificarStatusInscricao() {
             const form = document.getElementById('inscricaoForm');
@@ -462,6 +539,11 @@
 
         // --- CHAT ---
         function verificarLoginChat() {
+            // Primeiro verifica se o chat está habilitado
+            if (!chatHabilitado) {
+                return;
+            }
+            
             if (chatUsuario) {
                 document.getElementById('chatLoginArea').classList.add('hidden');
                 document.getElementById('chatArea').classList.remove('hidden');
@@ -474,6 +556,11 @@
         }
 
         document.getElementById('chatEntrarBtn').addEventListener('click', async () => {
+            if (!chatHabilitado) {
+                alert('O chat está desabilitado no momento.');
+                return;
+            }
+            
             const matricula = document.getElementById('chatMatricula').value.trim();
             if (!matricula) return alert('Digite sua matrícula');
             
@@ -545,6 +632,11 @@
 
         document.getElementById('chatForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            if (!chatHabilitado) {
+                alert('O chat está desabilitado no momento.');
+                return;
+            }
             
             if (!chatUsuario) {
                 alert('Você precisa estar logado para enviar mensagens.');
